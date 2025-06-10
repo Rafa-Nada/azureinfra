@@ -1,7 +1,7 @@
 subscription_id       = "a327a41f-a5e9-458f-b5bb-0dc87483eb85"
 resource_group_name   = "example-rg"
 location              = "East US"
-server_name           = "example-postgres-server"
+server_name           = "harnessdevdb"
 admin_username        = "pgadmin"
 admin_password        = "P@ssword123!"
 sku_name              = "B_Standard_B1ms"
