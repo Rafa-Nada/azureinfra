@@ -1,0 +1,13 @@
+subscription_id       = "your-subscription-id"
+resource_group_name   = "example-rg"
+location              = "East US"
+server_name           = "example-postgres-server"
+admin_username        = "pgadmin"
+admin_password        = "P@ssword123!"
+sku_name              = "Standard_D2s_v3"
+storage_mb            = 65536
+backup_retention_days = 7
+availability_zone     = "1"
+delegated_subnet_id   = "/subscriptions/.../subnets/your-subnet-id"
+private_dns_zone_id   = "/subscriptions/.../privateDnsZones/your-dns-zone-id"
+environment           = "dev"
