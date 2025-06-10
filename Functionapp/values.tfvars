@@ -1,0 +1,6 @@
+resource_group_name   = "my-funcapp-rg"
+location              = "East US"
+storage_account_name  = "myuniquestorage1234"
+app_service_plan_name = "my-funcapp-plan"
+function_app_name     = "my-terraform-function"
+runtime               = "dotnet"
