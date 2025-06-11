@@ -29,12 +29,8 @@ resource "azurerm_service_plan" "plan" {
   name                = var.app_service_plan_name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  kind                = "FunctionApp"
-
-  sku {
-    tier = "Dynamic"
-    size = "Y1"
-  }
+  os_type             = "Linux"
+  sku_name            = "Y1"
 }
 
 resource "azurerm_function_app" "function" {
@@ -47,7 +43,7 @@ resource "azurerm_function_app" "function" {
   version                    = "~4"
 
   site_config {
-    dotnet_framework_version = "v6.0"
+    linux_fx_version = "DOTNET|6.0"  # use "PYTHON|3.11" or "NODE|18" if needed
   }
 
   app_settings = {
@@ -55,3 +51,4 @@ resource "azurerm_function_app" "function" {
     WEBSITE_RUN_FROM_PACKAGE = "1"
   }
 }
+
