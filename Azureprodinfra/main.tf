@@ -89,23 +89,30 @@ resource "azurerm_app_service" "app" {
   resource_group_name = azurerm_resource_group.rg.name
   app_service_plan_id = azurerm_app_service_plan.asp.id
 
-  site_config {
-    linux_fx_version = "DOTNETCORE|6.0"
+  app_settings = {
+    "APP_ENV"                   = "production"
+    "DOCKER_CUSTOM_IMAGE_NAME" = "ghost:alpine"
+    "WEBSITES_PORT"            = "2368"
+
+    # Optional: App Service settings if needed for logs, debugging, etc.
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
   }
 
-  app_settings = {
-    "APP_ENV"                      = "production"
-    "SQL_ADMIN_USERNAME"           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.sql_admin_user.id})"
-    "SQL_ADMIN_PASSWORD"           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.sql_admin_pass.id})"
-    "WEBSITE_RUN_FROM_PACKAGE"     = "1"
+  site_config {
+    linux_fx_version = "DOCKER|ghost:alpine"
+    always_on        = true
   }
 
   identity {
     type = "SystemAssigned"
   }
 
-  depends_on = [azurerm_key_vault_secret.sql_admin_user]
+  depends_on = [
+    azurerm_key_vault_secret.sql_admin_user,
+    azurerm_key_vault_secret.sql_admin_pass
+  ]
 }
+
 
 # --------------------
 # Key Vault Access Policy for App
