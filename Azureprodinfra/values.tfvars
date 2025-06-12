@@ -1,0 +1,7 @@
+subscription_id       = "cab391e9-052c-410f-813e-b105c6808d28"
+location              = "East US"
+resource_group_name   = "harnessprod"
+prefix                = "harnessprod"
+storage_account_name  = "harnessprodsa"
+sql_admin             = "sqladminuser"
+sql_password          = "Welcome@12345678"
