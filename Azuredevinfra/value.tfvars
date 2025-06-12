@@ -1,0 +1,7 @@
+subscription_id       = "a327a41f-a5e9-458f-b5bb-0dc87483eb85"
+location              = "East US"
+resource_group_name   = "harnessdev"
+prefix                = "harnessdevapp"
+storage_account_name  = "devharness"
+sql_admin             = "sqladminuser"
+sql_password          = "Welcome@12345678"
