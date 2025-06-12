@@ -113,7 +113,7 @@ resource "azurerm_app_service" "app" {
 resource "azurerm_key_vault_access_policy" "app_access" {
   key_vault_id = azurerm_key_vault.kv.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_app_service.app.identity.principal_id
+  object_id    = object_id = azurerm_app_service.app.identity[0].principal_id
 
   secret_permissions = [
     "get", "list"
