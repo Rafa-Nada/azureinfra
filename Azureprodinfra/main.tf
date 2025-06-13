@@ -80,22 +80,23 @@ resource "azurerm_service_plan" "asp" {
   sku_name            = "S1"
 }
 
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   name                = "${var.prefix}-webapp"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  app_service_plan_id = azurerm_service_plan.asp.id
-
-  app_settings = {
-    "APP_ENV"                   = "production"
-    "DOCKER_CUSTOM_IMAGE_NAME" = "ghost:alpine"
-    "WEBSITES_PORT"            = "2368"
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-  }
+  service_plan_id     = azurerm_service_plan.asp.id
 
   site_config {
-    linux_fx_version = "DOCKER|ghost:alpine"
     always_on        = true
+    app_command_line = ""
+    linux_fx_version = "DOCKER|ghost:alpine"
+  }
+
+  app_settings = {
+    "APP_ENV"                         = "production"
+    "DOCKER_CUSTOM_IMAGE_NAME"       = "ghost:alpine"
+    "WEBSITES_PORT"                  = "2368"
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
   }
 
   identity {
@@ -103,13 +104,15 @@ resource "azurerm_app_service" "app" {
   }
 }
 
+
 # --------------------
 # Key Vault Access Policy for App
 # --------------------
 resource "azurerm_key_vault_access_policy" "app_access" {
   key_vault_id = azurerm_key_vault.kv.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_app_service.app.identity[0].principal_id
+  object_id = azurerm_linux_web_app.app.identity[0].principal_id
+
 
   secret_permissions = [
     "get", "list"
