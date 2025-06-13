@@ -5,9 +5,6 @@ provider "azurerm" {
 
 data "azurerm_client_config" "current" {}
 
-# --------------------
-# Resource Group
-# --------------------
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
@@ -70,7 +67,7 @@ resource "azurerm_mssql_database" "sqldb" {
 }
 
 # --------------------
-# App Service Plan + App Service
+# App Service Plan
 # --------------------
 resource "azurerm_service_plan" "asp" {
   name                = "${var.prefix}-asp"
@@ -80,6 +77,9 @@ resource "azurerm_service_plan" "asp" {
   sku_name            = "S1"
 }
 
+# --------------------
+# Linux Web App (Ghost Container)
+# --------------------
 resource "azurerm_linux_web_app" "app" {
   name                = "${var.prefix}-webapp"
   location            = azurerm_resource_group.rg.location
@@ -89,13 +89,14 @@ resource "azurerm_linux_web_app" "app" {
   site_config {
     always_on = true
 
-    # Here's how you specify the container image
-    linux_fx_version = "DOCKER|ghost:alpine"
+    application_stack {
+      docker_image_name   = "ghost:alpine"
+      docker_registry_url = "https://index.docker.io"
+    }
   }
 
   app_settings = {
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-    "DOCKER_CUSTOM_IMAGE_NAME"            = "ghost:alpine"
     "WEBSITES_PORT"                       = "2368"
     "APP_ENV"                             = "production"
   }
@@ -103,11 +104,16 @@ resource "azurerm_linux_web_app" "app" {
   identity {
     type = "SystemAssigned"
   }
+
+  depends_on = [
+    azurerm_key_vault_secret.sql_admin_user,
+    azurerm_key_vault_secret.sql_admin_pass
+  ]
 }
 
-
-
-
+# --------------------
+# Key Vault Access Policy for App
+# --------------------
 resource "azurerm_key_vault_access_policy" "app_access" {
   key_vault_id = azurerm_key_vault.kv.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
@@ -117,4 +123,3 @@ resource "azurerm_key_vault_access_policy" "app_access" {
     "get", "list"
   ]
 }
-
