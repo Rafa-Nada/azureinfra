@@ -88,6 +88,9 @@ resource "azurerm_linux_web_app" "app" {
 
   site_config {
     always_on = true
+
+    # Here's how you specify the container image
+    linux_fx_version = "DOCKER|ghost:alpine"
   }
 
   app_settings = {
@@ -97,14 +100,11 @@ resource "azurerm_linux_web_app" "app" {
     "APP_ENV"                             = "production"
   }
 
-  container_settings {
-    image_name = "ghost:alpine"
-  }
-
   identity {
     type = "SystemAssigned"
   }
 }
+
 
 
 
