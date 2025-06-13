@@ -61,10 +61,14 @@ resource "azurerm_mysql_flexible_server" "mysql" {
   sku_name               = "B_Standard_B1ms"
   version                = "8.0"
   zone                   = "1"
-  storage_mb             = 32768
   backup_retention_days  = 7
   geo_redundant_backup_enabled = false
+
+  storage {
+    size_gb = 32
+  }
 }
+
 
 resource "azurerm_mysql_flexible_database" "ghostdb" {
   name                = "${var.prefix}db"
