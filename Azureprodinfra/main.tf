@@ -59,7 +59,7 @@ resource "azurerm_mysql_flexible_server" "mysql" {
   administrator_login    = var.sql_admin
   administrator_password = var.sql_password
   sku_name               = "B_Standard_B1ms"
-  version                = "8.0"
+  version                = "8.0.21"
   zone                   = "1"
   backup_retention_days  = 7
   geo_redundant_backup_enabled = false
