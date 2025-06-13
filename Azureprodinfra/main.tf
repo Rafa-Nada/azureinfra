@@ -111,16 +111,17 @@ resource "azurerm_linux_web_app" "app" {
     }
   }
 
-  app_settings = {
-    url                                  = "https://${var.prefix}-webapp.azurewebsites.net"
-    database__client                     = "mysql"
-    database__connection__host           = azurerm_mysql_flexible_server.mysql.fqdn
-    database__connection__user           = "${var.sql_admin}@${azurerm_mysql_flexible_server.mysql.name}"
-    database__connection__password       = var.sql_password
-    database__connection__database       = azurerm_mysql_flexible_database.ghostdb.name
-    WEBSITES_PORT                        = "2368"
-    WEBSITES_ENABLE_APP_SERVICE_STORAGE = "true"
-  }
+ app_settings = {
+  url                                  = "https://${var.prefix}-webapp.azurewebsites.net"
+  database__client                     = "mysql"
+  database__connection__host           = azurerm_mysql_flexible_server.mysql.fqdn
+  database__connection__user           = var.sql_admin
+  database__connection__password       = var.sql_password
+  database__connection__database       = azurerm_mysql_flexible_database.ghostdb.name
+  WEBSITES_PORT                        = "2368"
+  WEBSITES_ENABLE_APP_SERVICE_STORAGE = "true"
+}
+
 
   depends_on = [
     azurerm_key_vault_secret.sql_admin_user,
