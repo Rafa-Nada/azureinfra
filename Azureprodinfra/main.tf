@@ -118,6 +118,7 @@ resource "azurerm_linux_web_app" "app" {
   database__connection__user           = var.sql_admin
   database__connection__password       = var.sql_password
   database__connection__database       = azurerm_mysql_flexible_database.ghostdb.name
+  database__connection__ssl__rejectUnauthorized = "false"
   WEBSITES_PORT                        = "2368"
   WEBSITES_ENABLE_APP_SERVICE_STORAGE = "true"
 }
