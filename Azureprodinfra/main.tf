@@ -1,3 +1,14 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+
+  required_version = ">= 1.0"
+}
+
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
@@ -14,7 +25,7 @@ resource "azurerm_resource_group" "rg" {
 }
 
 # --------------------
-# Azure Key Vault
+# Key Vault
 # --------------------
 resource "azurerm_key_vault" "kv" {
   name                        = "${var.prefix}-kv"
@@ -39,7 +50,7 @@ resource "azurerm_key_vault_secret" "sql_admin_pass" {
 }
 
 # --------------------
-# Azure Storage Account
+# Storage Account
 # --------------------
 resource "azurerm_storage_account" "storage" {
   name                     = var.storage_account_name
@@ -50,36 +61,27 @@ resource "azurerm_storage_account" "storage" {
 }
 
 # --------------------
-# MySQL Flexible Server
+# SQL Server & DB
 # --------------------
-resource "azurerm_mysql_flexible_server" "mysql" {
-  name                   = "${var.prefix}-mysql"
-  location               = azurerm_resource_group.rg.location
-  resource_group_name    = azurerm_resource_group.rg.name
-  administrator_login    = var.sql_admin
-  administrator_password = var.sql_password
-  sku_name               = "B_Standard_B1ms"
-  version                = "8.0.21"
-  zone                   = "1"
-  backup_retention_days  = 7
-  geo_redundant_backup_enabled = false
-
-  storage {
-    size_gb = 32
-  }
+resource "azurerm_mssql_server" "sql" {
+  name                         = "${var.prefix}-sqlserver"
+  resource_group_name          = azurerm_resource_group.rg.name
+  location                     = azurerm_resource_group.rg.location
+  version                      = "12.0"
+  administrator_login          = var.sql_admin
+  administrator_login_password = var.sql_password
 }
 
-
-resource "azurerm_mysql_flexible_database" "ghostdb" {
-  name                = "${var.prefix}db"
-  resource_group_name = azurerm_resource_group.rg.name
-  server_name         = azurerm_mysql_flexible_server.mysql.name
-  charset             = "utf8mb4"
-  collation           = "utf8mb4_unicode_ci"
+resource "azurerm_mssql_database" "sqldb" {
+  name           = "${var.prefix}-sqldb"
+  server_id      = azurerm_mssql_server.sql.id
+  sku_name       = "S1"
+  max_size_gb    = 10
+  zone_redundant = false
 }
 
 # --------------------
-# App Service Plan
+# App Service Plan (Linux)
 # --------------------
 resource "azurerm_service_plan" "asp" {
   name                = "${var.prefix}-asp"
@@ -90,7 +92,7 @@ resource "azurerm_service_plan" "asp" {
 }
 
 # --------------------
-# Linux Web App (Ghost in Docker)
+# Linux Web App with Docker
 # --------------------
 resource "azurerm_linux_web_app" "app" {
   name                = "${var.prefix}-webapp"
@@ -103,18 +105,14 @@ resource "azurerm_linux_web_app" "app" {
   }
 
   site_config {
-    application_stack {
-      docker_image_name = "ghost"
-      docker_image_tag  = "alpine"
-    }
-
-    always_on = true
+    linux_fx_version = "DOCKER|ghost:alpine"
+    always_on        = true
   }
 
   app_settings = {
-    "APP_ENV"                            = "production"
+    "APP_ENV"                             = "production"
+    "WEBSITES_PORT"                       = "2368"
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-    "WEBSITES_PORT"                      = "2368"
   }
 
   depends_on = [
@@ -123,14 +121,13 @@ resource "azurerm_linux_web_app" "app" {
   ]
 }
 
-
 # --------------------
-# Key Vault Access Policy for App
+# Key Vault Access Policy for Web App
 # --------------------
 resource "azurerm_key_vault_access_policy" "app_access" {
   key_vault_id = azurerm_key_vault.kv.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_linux_web_app.app.identity.principal_id
+  object_id    = azurerm_linux_web_app.app.identity[0].principal_id
 
   secret_permissions = [
     "Get",
