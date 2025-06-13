@@ -67,6 +67,15 @@ resource "azurerm_mysql_flexible_server" "mysql" {
   }
 }
 
+# ✅ NEW: Allow Azure App Services to access the MySQL Flexible Server
+resource "azurerm_mysql_flexible_server_firewall_rule" "allow_azure_services" {
+  name                = "AllowAzureServices"
+  resource_group_name = azurerm_resource_group.rg.name
+  server_name         = azurerm_mysql_flexible_server.mysql.name
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
+}
+
 resource "azurerm_mysql_flexible_database" "ghostdb" {
   name                = "${var.prefix}db"
   resource_group_name = azurerm_resource_group.rg.name
@@ -104,11 +113,11 @@ resource "azurerm_linux_web_app" "app" {
 
   app_settings = {
     url                                  = "https://${var.prefix}-webapp.azurewebsites.net"
-    database__client                    = "mysql"
-    database__connection__host         = azurerm_mysql_flexible_server.mysql.fqdn
-    database__connection__user         = "${var.sql_admin}@${azurerm_mysql_flexible_server.mysql.name}"
-    database__connection__password     = var.sql_password
-    database__connection__database     = azurerm_mysql_flexible_database.ghostdb.name
+    database__client                     = "mysql"
+    database__connection__host           = azurerm_mysql_flexible_server.mysql.fqdn
+    database__connection__user           = "${var.sql_admin}@${azurerm_mysql_flexible_server.mysql.name}"
+    database__connection__password       = var.sql_password
+    database__connection__database       = azurerm_mysql_flexible_database.ghostdb.name
     WEBSITES_PORT                        = "2368"
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = "true"
   }
