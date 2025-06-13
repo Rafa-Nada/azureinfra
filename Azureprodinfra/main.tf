@@ -3,6 +3,11 @@ provider "azurerm" {
   subscription_id = var.subscription_id
 }
 
+data "azurerm_client_config" "current" {}
+
+# --------------------
+# Resource Group
+# --------------------
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
@@ -20,8 +25,6 @@ resource "azurerm_key_vault" "kv" {
   purge_protection_enabled    = false
   soft_delete_retention_days  = 7
 }
-
-data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault_secret" "sql_admin_user" {
   name         = "SqlAdminUsername"
@@ -69,32 +72,24 @@ resource "azurerm_mssql_database" "sqldb" {
 # --------------------
 # App Service Plan + App Service
 # --------------------
-resource "azurerm_app_service_plan" "asp" {
+resource "azurerm_service_plan" "asp" {
   name                = "${var.prefix}-asp"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-
-  sku {
-    tier = "Standard"
-    size = "S1"
-  }
-
-  kind     = "Linux"
-  reserved = true
+  os_type             = "Linux"
+  sku_name            = "S1"
 }
 
 resource "azurerm_app_service" "app" {
   name                = "${var.prefix}-webapp"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  app_service_plan_id = azurerm_app_service_plan.asp.id
+  app_service_plan_id = azurerm_service_plan.asp.id
 
   app_settings = {
     "APP_ENV"                   = "production"
     "DOCKER_CUSTOM_IMAGE_NAME" = "ghost:alpine"
     "WEBSITES_PORT"            = "2368"
-
-    # Optional: App Service settings if needed for logs, debugging, etc.
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
   }
 
@@ -106,13 +101,7 @@ resource "azurerm_app_service" "app" {
   identity {
     type = "SystemAssigned"
   }
-
-  depends_on = [
-    azurerm_key_vault_secret.sql_admin_user,
-    azurerm_key_vault_secret.sql_admin_pass
-  ]
 }
-
 
 # --------------------
 # Key Vault Access Policy for App
