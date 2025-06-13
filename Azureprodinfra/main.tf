@@ -87,16 +87,18 @@ resource "azurerm_linux_web_app" "app" {
   service_plan_id     = azurerm_service_plan.asp.id
 
   site_config {
-    always_on        = true
-    app_command_line = ""
-    linux_fx_version = "DOCKER|ghost:alpine"
+    always_on = true
   }
 
   app_settings = {
-    "APP_ENV"                         = "production"
-    "DOCKER_CUSTOM_IMAGE_NAME"       = "ghost:alpine"
-    "WEBSITES_PORT"                  = "2368"
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
+    "DOCKER_CUSTOM_IMAGE_NAME"            = "ghost:alpine"
+    "WEBSITES_PORT"                       = "2368"
+    "APP_ENV"                             = "production"
+  }
+
+  container_settings {
+    image_name = "ghost:alpine"
   }
 
   identity {
@@ -105,16 +107,14 @@ resource "azurerm_linux_web_app" "app" {
 }
 
 
-# --------------------
-# Key Vault Access Policy for App
-# --------------------
+
 resource "azurerm_key_vault_access_policy" "app_access" {
   key_vault_id = azurerm_key_vault.kv.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id = azurerm_linux_web_app.app.identity[0].principal_id
-
+  object_id    = azurerm_linux_web_app.app.identity[0].principal_id
 
   secret_permissions = [
     "get", "list"
   ]
 }
+
