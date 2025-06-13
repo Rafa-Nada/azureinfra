@@ -98,31 +98,23 @@ resource "azurerm_linux_web_app" "app" {
   resource_group_name = azurerm_resource_group.rg.name
   service_plan_id     = azurerm_service_plan.asp.id
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   site_config {
-    always_on = true
     application_stack {
-      docker_image_name   = "ghost"
-      docker_image_tag    = "alpine"
-      docker_registry_url = "https://index.docker.io"
+      docker_image_name = "ghost"
+      docker_image_tag  = "alpine"
     }
+
+    always_on = true
   }
 
   app_settings = {
-    "url" = "https://${var.prefix}-webapp.azurewebsites.net"
-
-    # Ghost DB configuration
-    "database__client"                   = "mysql"
-    "database__connection__host"        = azurerm_mysql_flexible_server.mysql.fqdn
-    "database__connection__user"        = "${var.sql_admin}@${azurerm_mysql_flexible_server.mysql.name}"
-    "database__connection__password"    = var.sql_password
-    "database__connection__database"    = azurerm_mysql_flexible_database.ghostdb.name
-
-    "WEBSITES_PORT"                     = "2368"
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "true"
-  }
-
-  identity {
-    type = "SystemAssigned"
+    "APP_ENV"                            = "production"
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
+    "WEBSITES_PORT"                      = "2368"
   }
 
   depends_on = [
@@ -130,6 +122,7 @@ resource "azurerm_linux_web_app" "app" {
     azurerm_key_vault_secret.sql_admin_pass
   ]
 }
+
 
 # --------------------
 # Key Vault Access Policy for App
