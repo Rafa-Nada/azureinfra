@@ -5,6 +5,9 @@ provider "azurerm" {
 
 data "azurerm_client_config" "current" {}
 
+# --------------------
+# Resource Group
+# --------------------
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
@@ -36,7 +39,7 @@ resource "azurerm_key_vault_secret" "sql_admin_pass" {
 }
 
 # --------------------
-# Storage Account
+# Azure Storage Account
 # --------------------
 resource "azurerm_storage_account" "storage" {
   name                     = var.storage_account_name
@@ -47,23 +50,28 @@ resource "azurerm_storage_account" "storage" {
 }
 
 # --------------------
-# SQL Server + Database
+# MySQL Flexible Server
 # --------------------
-resource "azurerm_mssql_server" "sql" {
-  name                         = "${var.prefix}-sqlserver"
-  resource_group_name          = azurerm_resource_group.rg.name
-  location                     = azurerm_resource_group.rg.location
-  version                      = "12.0"
-  administrator_login          = var.sql_admin
-  administrator_login_password = var.sql_password
+resource "azurerm_mysql_flexible_server" "mysql" {
+  name                   = "${var.prefix}-mysql"
+  location               = azurerm_resource_group.rg.location
+  resource_group_name    = azurerm_resource_group.rg.name
+  administrator_login    = var.sql_admin
+  administrator_password = var.sql_password
+  sku_name               = "B_Standard_B1ms"
+  version                = "8.0"
+  zone                   = "1"
+  storage_mb             = 32768
+  backup_retention_days  = 7
+  geo_redundant_backup_enabled = false
 }
 
-resource "azurerm_mssql_database" "sqldb" {
-  name           = "${var.prefix}-sqldb"
-  server_id      = azurerm_mssql_server.sql.id
-  sku_name       = "S1"
-  max_size_gb    = 10
-  zone_redundant = false
+resource "azurerm_mysql_flexible_database" "ghostdb" {
+  name                = "${var.prefix}db"
+  resource_group_name = azurerm_resource_group.rg.name
+  server_name         = azurerm_mysql_flexible_server.mysql.name
+  charset             = "utf8mb4"
+  collation           = "utf8mb4_unicode_ci"
 }
 
 # --------------------
@@ -78,7 +86,7 @@ resource "azurerm_service_plan" "asp" {
 }
 
 # --------------------
-# Linux Web App (Ghost Container)
+# Linux Web App (Ghost in Docker)
 # --------------------
 resource "azurerm_linux_web_app" "app" {
   name                = "${var.prefix}-webapp"
@@ -88,17 +96,25 @@ resource "azurerm_linux_web_app" "app" {
 
   site_config {
     always_on = true
-
     application_stack {
-      docker_image_name   = "ghost:alpine"
+      docker_image_name   = "ghost"
+      docker_image_tag    = "alpine"
       docker_registry_url = "https://index.docker.io"
     }
   }
 
   app_settings = {
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-    "WEBSITES_PORT"                       = "2368"
-    "APP_ENV"                             = "production"
+    "url" = "https://${var.prefix}-webapp.azurewebsites.net"
+
+    # Ghost DB configuration
+    "database__client"                   = "mysql"
+    "database__connection__host"        = azurerm_mysql_flexible_server.mysql.fqdn
+    "database__connection__user"        = "${var.sql_admin}@${azurerm_mysql_flexible_server.mysql.name}"
+    "database__connection__password"    = var.sql_password
+    "database__connection__database"    = azurerm_mysql_flexible_database.ghostdb.name
+
+    "WEBSITES_PORT"                     = "2368"
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "true"
   }
 
   identity {
@@ -117,11 +133,10 @@ resource "azurerm_linux_web_app" "app" {
 resource "azurerm_key_vault_access_policy" "app_access" {
   key_vault_id = azurerm_key_vault.kv.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_linux_web_app.app.identity[0].principal_id
+  object_id    = azurerm_linux_web_app.app.identity.principal_id
 
   secret_permissions = [
-    "Get", "List"
+    "Get",
+    "List"
   ]
 }
-
-
