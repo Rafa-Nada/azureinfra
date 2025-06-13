@@ -1,5 +1,5 @@
 subscription_id       = "a327a41f-a5e9-458f-b5bb-0dc87483eb85"
-location              = "East US"
+location              = "Central India"
 resource_group_name   = "harnessprod"
 prefix                = "harnessprod"
 storage_account_name  = "harnessprodsa"
