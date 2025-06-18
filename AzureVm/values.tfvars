@@ -1,6 +1,6 @@
-subscription_id       = "your-subscription-id-here"
+subscription_id       = "a327a41f-a5e9-458f-b5bb-0dc87483eb85"
 resource_group_name   = "demo-rg"
 location              = "East US"
 admin_username        = "azureuser"
-admin_password        = "YourStrongP@ssw0rd!"
+admin_password        = "Welcome@12345678"
 vm_size               = "Standard_B2s"
