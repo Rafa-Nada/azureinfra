@@ -86,14 +86,14 @@ resource "azurerm_lb_probe" "http" {
 }
 
 resource "azurerm_lb_rule" "http" {
-  name                            = "http-rule"
-  loadbalancer_id                 = azurerm_lb.main.id
-  protocol                        = "Tcp"
-  frontend_port                   = 80
-  backend_port                    = 80
+  name                           = "http-rule"
+  loadbalancer_id                = azurerm_lb.main.id
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = 80
   frontend_ip_configuration_name = "frontend"
-  backend_address_pool_ids        = [azurerm_lb_backend_address_pool.bpepool.id]
-  probe_id                        = azurerm_lb_probe.http.id
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.bpepool.id]
+  probe_id                       = azurerm_lb_probe.http.id
 }
 
 resource "azurerm_network_interface" "main" {
@@ -117,6 +117,36 @@ resource "azurerm_network_interface_backend_address_pool_association" "main" {
   network_interface_id    = azurerm_network_interface.main.id
   ip_configuration_name   = "internal"
   backend_address_pool_id = azurerm_lb_backend_address_pool.bpepool.id
+}
+
+resource "azurerm_linux_virtual_machine" "main" {
+  name                            = "jfrog-vm"
+  location                        = var.location
+  resource_group_name             = var.resource_group_name
+  size                            = "Standard_B2s"
+  admin_username                  = var.admin_username
+  admin_password                  = var.admin_password
+  disable_password_authentication = false
+  network_interface_ids           = [azurerm_network_interface.main.id]
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18.04-LTS"
+    version   = "latest"
+  }
+
+  os_disk {
+    name                 = "osdisk"
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  custom_data = base64encode(templatefile("${path.module}/install_jfrog.sh.tmpl", {
+    db_host     = azurerm_mysql_flexible_server.db.fqdn,
+    db_user     = "${var.db_username}@${azurerm_mysql_flexible_server.db.name}",
+    db_password = var.db_password
+  }))
 }
 
 resource "azurerm_mysql_flexible_server" "db" {
@@ -144,42 +174,6 @@ resource "azurerm_mysql_flexible_database" "db" {
   server_name         = azurerm_mysql_flexible_server.db.name
   charset             = "utf8"
   collation           = "utf8_unicode_ci"
-}
-
-locals {
-  db_user_full = "${var.db_username}@${azurerm_mysql_flexible_server.db.name}"
-}
-
-resource "azurerm_linux_virtual_machine" "main" {
-  name                            = "jfrog-vm"
-  location                        = var.location
-  resource_group_name             = var.resource_group_name
-  size                            = "Standard_B2s"
-  admin_username                  = var.admin_username
-  admin_password                  = var.admin_password
-  disable_password_authentication = false
-  network_interface_ids           = [azurerm_network_interface.main.id]
-
-  source_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
-    version   = "latest"
-  }
-
-  os_disk {
-    name                 = "osdisk"
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
-
-  custom_data = base64encode(templatefile("install_jfrog.sh.tmpl", {
-    db_host     = azurerm_mysql_flexible_server.db.fqdn,
-    db_user     = local.db_user_full,
-    db_password = var.db_password
-  }))
-
-  depends_on = [azurerm_mysql_flexible_server.db]
 }
 
 output "load_balancer_public_ip" {
