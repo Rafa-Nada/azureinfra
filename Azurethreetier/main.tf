@@ -142,7 +142,7 @@ resource "azurerm_linux_virtual_machine" "main" {
     storage_account_type = "Standard_LRS"
   }
 
-  custom_data = base64encode(templatefile("${path.module}/install_jfrog.sh.tmpl", {
+  custom_data = base64encode(templatefile("install_jfrog.sh.tmpl", {", {
     db_host     = azurerm_mysql_flexible_server.db.fqdn,
     db_user     = "${var.db_username}@${azurerm_mysql_flexible_server.db.name}",
     db_password = var.db_password
