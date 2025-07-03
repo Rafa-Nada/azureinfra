@@ -156,7 +156,7 @@ resource "azurerm_mysql_flexible_server" "db" {
   administrator_login    = var.db_username
   administrator_password = var.db_password
   sku_name               = "B1ms"
-  version                = "8.0"
+  version                = "8.0.21"
   zone                   = "1"
 
   storage {
@@ -164,7 +164,7 @@ resource "azurerm_mysql_flexible_server" "db" {
   }
 
   high_availability {
-    mode = "Disabled"
+    mode = "ZoneRedundant"
   }
 }
 
