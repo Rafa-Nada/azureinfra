@@ -155,7 +155,7 @@ resource "azurerm_mysql_flexible_server" "db" {
   resource_group_name    = var.resource_group_name
   administrator_login    = var.db_username
   administrator_password = var.db_password
-  sku_name               = "B1ms"
+  sku_name               = "Standard_B1ms"
   version                = "8.0.21"
   zone                   = "1"
 
